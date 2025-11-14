@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.teris</groupId>
+    <artifactId>Tetris</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>Tetris</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <junit.version>5.12.1</junit.version>
+        <java.version>17</java.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20231013</version>
+        </dependency>
+        <!-- JavaFX -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>21.0.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>21.0.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>21.0.6</version>
+        </dependency>
+
+        <!-- JUnit para testes -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Compilador -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <!-- Use 'release' to ensure bytecode and API compatibility with the chosen Java version -->
+                    <release>${java.version}</release>
+                    <!-- Fork so we can point to a specific javac executable when multiple JDKs are installed -->
+                    <fork>true</fork>
+                    <!-- Fallback: use JAVA_HOME if set. On Windows this expands to %JAVA_HOME%/bin/javac -->
+                    <compilerExecutable>${env.JAVA_HOME}/bin/javac</compilerExecutable>
+                </configuration>
+            </plugin>
+
+            <!-- Enforce Java version at build time to avoid compiling with a newer JDK -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>enforce-java</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>17</version>
+                                </requireJavaVersion>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Nota: limpeza forçada removida para builds mais rápidos; recomendamos usar toolchains ou garantir JAVA_HOME apontando para JDK 17 -->
+
+            <!-- Toolchains removed: using compilerExecutable + <release>17> to ensure correct bytecode. -->
+
+            <!-- Plugin JavaFX -->
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>com.tetris.MainApp</mainClass>
+                    <launcher>app</launcher>
+                    <jlinkZipName>app</jlinkZipName>
+                    <jlinkImageName>app</jlinkImageName>
+                    <noManPages>true</noManPages>
+                    <stripDebug>true</stripDebug>
+                    <noHeaderFiles>true</noHeaderFiles>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>create-jlink-image</id>
+                        <goals>
+                            <goal>jlink</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Name of generated runtime image folder -->
+                            <jlinkImageName>${project.artifactId}-image</jlinkImageName>
+                            <!-- Modules to include explicitly (jdk modules + javafx) -->
+                            <addModules>java.base,javafx.controls,javafx.fxml</addModules>
+                            <compress>2</compress>
+                            <noHeaderFiles>true</noHeaderFiles>
+                            <noManPages>true</noManPages>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Gerar JAR executável (manifest) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <!-- Nota: para aplicações modulares, 'java -jar' pode não funcionar como esperado;
+                         use o runtime image gerado por jlink ou use um uber-jar especializado. -->
+                    <archive>
+                        <manifest>
+                            <mainClass>com.tetris.MainApp</mainClass>
+                        </manifest>
+                    </archive>
+                    <!-- Excluir module-info.class para produzir um JAR 'clássico' (não-modular).
+                         Se você preferir manter modularidade, use o runtime image gerado por jlink.
+                    -->
+                    <excludes>
+                        <exclude>module-info.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <!-- Plugin para empacotar com jpackage (gera instaladores nativos) -->
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <configuration>
+                    <name>${project.name}</name>
+                    <mainJar>${project.build.finalName}.jar</mainJar>
+                    <mainClass>com.tetris.MainApp</mainClass>
+                    <appVersion>${project.version}</appVersion>
+                    <vendor>com.teris</vendor>
+                    <!-- Use a runtime image generated by javafx:jlink -->
+                    <runtimeImage>${project.build.directory}/${project.artifactId}-image</runtimeImage>
+                    <!-- No Windows, prefer exe; on mac/linux change 'type' accordingly -->
+                    <type>exe</type>
+                    <!-- Optional: caminho para ícone/recursos -->
+                    <!-- <icon>${project.basedir}/assets/icon.ico</icon> -->
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
