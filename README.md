@@ -21,7 +21,7 @@
 ## Tecnologias Utilizadas
 - **Linguagem:** Java (Compatível com JDK 11 ou superior)
 - **Interface Gráfica:** JavaFX
-- **IDE de Desenvolvimento:** IntelliJ IDEA
+- **IDE de Desenvolvimento:** Visual Studio Code IDEA
 ---
 ## Funcionalidades Implementadas
 
